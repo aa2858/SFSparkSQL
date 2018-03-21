@@ -3,10 +3,11 @@
 
 
 sql_src_po_dtl_fact = """ SELECT *
-                            from edwp.po_dtl_fact where co_po_nbr like '%35%' """
+                            from edwp.po_dtl_fact where 1=1 """
 
+f0321="co_po_nbr like '%351%'"
 f45="co_po_typ_cd = 'DRP' and co_po_nbr > '00476040' and co_po_nbr < '00790830' "
-f1=" where  co_bus_ordr_dt>'06/01/2017'  and co_bus_ordr_dt<'07/01/2017'  "
+f1=" where  co_bus_ordr_dt>'06/01/2017' xx  and co_bus_ordr_dt<'07/01/2017'  "
 
 
 f33s="co_skey in (7,56) and itm_skey in  (394169,425281,377710,368931,874129,404300,373607,904799,76346) "
@@ -17,8 +18,9 @@ PurchaseOrderHeader = """ SELECT co_cnfm_ap_ext_amt,
                             co_skey,
                             co_po_nbr,
                             co_po_typ_cd
-                            from edwp.po_head_fact where co_po_nbr like '%35%' """
+                            from edwp.po_head_fact where 1=1 """
 
+f0322b="where co_po_nbr like '%351%' "
 f99="where co_po_typ_cd = 'DRP' and co_po_nbr > '00476040' and co_po_nbr < '00790830' "
 
 f2="where co_bus_ordr_dt > '06/01/2017' and co_bus_ordr_dt < '07/01/2017'  "
@@ -77,12 +79,12 @@ TransactionsOrder1 = """  SELECT 	trns_ordr_line_itm_fact.tms_ordr_id							as t
 						substring(tc_ordr_id,5,len(tc_ordr_id))								as sub5_tc_ordr_id
 					from ( select *
 						        from edwp.trns_ordr_fact
-						        where tc_ordr_id like '%35%'
+						        where 1=1
         				 ) trns_ordr_fact
         				 join edwp.trns_ordr_line_itm_fact trns_ordr_line_itm_fact  on trns_ordr_line_itm_fact.tms_ordr_id = trns_ordr_fact.tms_ordr_id
 					     join edwp.trns_facl_dim trns_facl_dim 	on trns_facl_dim.facl_id = trns_ordr_fact.dest_facl_id  """
 
-
+f1="where tc_ordr_id like '%351-x%"
 F3="""					WHERE  ordr_creat_dttm >'06/01/2017' and  ordr_creat_dttm <'07/01/2017'  """
 f76="where substring(tc_ordr_id, 5, len(tc_ordr_id)) > '00476040' and substring(tc_ordr_id, 5, len(tc_ordr_id)) < '00790830'"
 
