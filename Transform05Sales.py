@@ -91,35 +91,80 @@ def main():
     #                                               |_|______|     |_|
     #
 
+    filter_type=1
+
+    if filter_type==1:
+        type1_filter_VendorAgreement = " WHERE co_skey in (7,56) and incm_ern_dt>='2018-01-01' and vndragr.itm_skey in  (394169,425281,377710,368931,874129,404300,373607,904799,76346) "
+        type1_filter_oblig_dtl = " WHERE  oblig_dt>='01/01/2018' "
+        type1_filter_oblig_head = " WHERE  oblig_dt>='01/01/2018' "
+        type1_filter_itm_ = " WHERE itm_skey in  (394169,425281,377710,368931,874129,404300,373607,904799,76346) "
+        type1_filter_itm_co_itm = " WHERE itm_skey in  (394169,425281,377710,368931,874129,404300,373607,904799,76346) "
+        type1_filter_calendar = " WHERE day_dt>'01/01/2018' "
+        type1_filter_cal_day_dim = " WHERE day_dt>'01/01/2018' "
+        type1_filter_cust_ship_to = " WHERE co_skey in (7,56) "
+
+        var_sql_VendorAgreement = sqlfile.sql_src_VendorAgreement
+        var_sql_oblig_dtl =sqlfile.sql_src_oblig_dtl
+        var_sql_oblig_head =sqlfile.sql_src_oblig_head
+        var_sql_itm =sqlfile.sql_src_itm
+        var_sql_itm_co_itm =sqlfile.sql_src_itm_co_itm
+        var_sql_calendar =sqlfile.sql_src_calendar
+        var_sql_cal_day_dim =sqlfile.sql_src_cal_day_dim
+        var_sql_cust_ship_to =sqlfile.sql_src_cust_ship_to
+
+        var_sql_VendorAgreement = var_sql_VendorAgreement.replace("where 1=1", type1_filter_VendorAgreement)
+        var_sql_oblig_dtl = var_sql_oblig_dtl.replace("where 1=1", type1_filter_oblig_dtl)
+        var_sql_oblig_head = var_sql_oblig_head.replace("where 1=1", type1_filter_oblig_head)
+        var_sql_itm_ = var_sql_itm.replace("where 1=1", type1_filter_itm_)
+        var_sql_itm_co_itm = var_sql_itm_co_itm.replace("where 1=1", type1_filter_itm_co_itm)
+        var_sql_calendar = var_sql_calendar.replace("where 1=1", type1_filter_calendar)
+        var_sql_cal_day_dim = var_sql_cal_day_dim.replace("where 1=1", type1_filter_cal_day_dim)
+        var_sql_cust_ship_to = var_sql_cust_ship_to.replace("where 1=1", type1_filter_cust_ship_to)
+    else:
+        print("Do nothing-will process the whole entire set with no filters set")
+
+
     dfsrc1 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_oblig_dtl + "  ", "DUMMY_TMP_TABLE_MISSING_WEEK_ENDING_SALE")
     dfsrc1 = dfsrc1.withColumn('week_ending_sale', next_day(dfsrc1.oblig_dt, 'Sun'))
     dfsrc1.createOrReplaceTempView("rs_TMP_SQL_src_sale_oblig_dtl_fact_mstr")
 
 
-    dfsrc2 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_oblig_head + "  ", "TMP_SQL_src_sale_oblig_head_fact")
-    dfsrc3 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_itm + "  ", "TMP_SQL_src_itm_dim")
-    dfsrc4 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_itm_co_itm + "  ", "TMP_SQL_src_itm_co_itm_rel")
-    dfsrc5 = common_func.registerRedshiftQuery(hive_context, sqlfile.SqlVendorAgreement + "  ", "TMP_SQL_src_agr_vndr_agr_trans_fact")
+    dfsrc2 = common_func.registerRedshiftQuery(hive_context, var_sql_oblig_head, "TMP_SQL_src_sale_oblig_head_fact")
+    dfsrc3 = common_func.registerRedshiftQuery(hive_context, var_sql_itm_, "TMP_SQL_src_itm_dim")
+    dfsrc4 = common_func.registerRedshiftQuery(hive_context, var_sql_itm_co_itm, "TMP_SQL_src_itm_co_itm_rel")
+    dfsrc5 = common_func.registerRedshiftQuery(hive_context, var_sql_VendorAgreement , "TMP_SQL_src_agr_vndr_agr_trans_fact")
 
-    dfsrc6 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_cust_ship_to + "  ", "TMP_SQL_src_cust_ship_to_dim")
-    dfsrc7 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_calendar + "  ",  "TMP_SQL_src_calendar")
-    dfsrc8 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_src_cal_day_dim  + "  ",  "TMP_SQL_src_cal_day_dim")
+    dfsrc6 = common_func.registerRedshiftQuery(hive_context, var_sql_cust_ship_to, "TMP_SQL_src_cust_ship_to_dim")
+    dfsrc7 = common_func.registerRedshiftQuery(hive_context, var_sql_calendar ,  "TMP_SQL_src_calendar")
+    dfsrc8 = common_func.registerRedshiftQuery(hive_context, var_sql_cal_day_dim,  "TMP_SQL_src_cal_day_dim")
 
     dfsrc9 = common_func.registerRedshiftQuery(hive_context, 'select * from intp.ei_sap_go_live_dates', "TMP_SQL_src_ei_sap_go_live_dates")
 
 
-    #REFERENCE FOR oblig_dtl.week_ending_sale = sus_weekly.week_ending
-
     print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%READ ETL STAGE INTERMEDIATE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*")
 
-    dfstg1 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_stg_agr_sum + "  ", "TMP_SQL_stg_ei_agr_vndr_agr_trans_reseg")
-    dfstg2 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_stg_sus_weekly + "  ", "TMP_SQL_stg_ei_sus_weekly")
+    dfstg1 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_stg_agr_sum , "TMP_SQL_stg_ei_agr_vndr_agr_trans_reseg")
+    dfstg2 = common_func.registerRedshiftQuery(hive_context, sqlfile.sql_stg_sus_weekly , "TMP_SQL_stg_ei_sus_weekly")
+
+    print("***************************CACHE TABLES *************************")
+
+    spark.cacheTable("rs_TMP_SQL_src_sale_oblig_dtl_fact_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_sale_oblig_head_fact_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_itm_dim_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_itm_co_itm_rel_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_agr_vndr_agr_trans_fact_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_cust_ship_to_dim_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_cal_day_dim_mstr")
+    spark.cacheTable("rs_TMP_SQL_src_ei_sap_go_live_dates_mstr")
+
+    #Two staging tables
+    spark.cacheTable("rs_TMP_SQL_stg_ei_agr_vndr_agr_trans_reseg_mstr")
+    spark.cacheTable("rs_TMP_SQL_stg_ei_sus_weekly_mstr")
 
     print("***************************ORIGINAL QUERY direct reference using x.var *************************")
-    sqlmain = sqlfile.sql_ei_main_full
-    print(sqlfile.sql_ei_main_full)
-    print("***************************ORIGINAL QUERY *************************")
-    print(sqlmain)
+    sqlmain = sqlfile.sql_final_main_full
+
+    print("***************************REPLACING EDWP TABLES by LOADED HADOOP TABLES *************************")
 
     sqlmain = sqlmain.replace("edwp.sale_oblig_dtl_fact", "rs_TMP_SQL_src_sale_oblig_dtl_fact_mstr")
     sqlmain = sqlmain.replace("edwp.sale_oblig_head_fact", "rs_TMP_SQL_src_sale_oblig_head_fact_mstr")
@@ -134,7 +179,6 @@ def main():
     #STAGING
     sqlmain = sqlmain.replace("intp.ei_agr_vndr_agr_trans_reseg", "rs_TMP_SQL_stg_ei_agr_vndr_agr_trans_reseg_mstr")
     sqlmain = sqlmain.replace("intp.ei_sus_weekly", "rs_TMP_SQL_stg_ei_sus_weekly_mstr")
-
 
     print("************************** REPLACE_QUERY  **************************")
     print(sqlmain)
@@ -167,43 +211,6 @@ def main():
     print('*logic3')
     dflogic1=spark.sql(sqlmain)
 
-    #PENDING STORE RESULTS OF dflogic3
-
-    #LOAD DATA
-    # print("*** Read table ei_purchase_order_item_level and create a temporary SQL table")
-    # df1 = common_func.registerRedshiftQuery(hive_context, 'SELECT * FROM intp.ei_purchase_order_item_level', "TMP_NOT_USED")
-
-    # df2.createOrReplaceTempView("rs_TMP_SQL_ei_purchase_order_item_level_mstr")
-    #
-    # print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  MAIN QUERY%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*")
-    #
-    # print(sqlfile.sqlPurchaseOrdersWeekly)
-    # df3 = spark.sql(sqlfile.sqlPurchaseOrdersWeekly)
-    #
-    # print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%SCHEMA%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*")
-    # # Count using Select statement
-    # # TEMPLATE EXAMPLE countDistinctDF_sql = sqlContext.sql("SELECT firstName, lastName, count(distinct firstName) as distinct_first_names FROM databricks_df_example GROUP BY firstName, lastName")
-    #
-    #
-    # ##The tempdir values is tempdir="s3://sysco-nonprod-seed-spark-redshift-temp/
-    # print("%%*step 1 before writing%%*")
-    # # need to call function insertDataFrameToS3(dataframe_name, path)
-    # # sample call common_func.loadDataIntoRedshift(logging, 'CUSTOM', config.dataMartSchema, 'PO_UNIQUE', PO_UNIQUE_INSERT_DATA_FRAME,    co_nbr_list, preaction_query=preaction_query)
-    #
-    # #
-    # # param1=logging
-    # # param2='INSERT','UPSERT'
-    # # param3=schema (intp value for stageSchema)
-    # # param4=table_name (final destination)
-    # # param5=dataframe
-    #
-    # print("%%*Prepare Company List%%*")
-    # #PENGIND START USING FUNCTIONALITY FOR NBR LIST
-    # co_nbr_list = "'000'"
-    #
-    # print("%%*Number of Records calculated:")
-    # print(df3.count())
-    #
     print("%%*Insert Statements %%*")
     common_func.loadDataIntoRedshift(logging, 'INSERT', 'intp', 'ei_sus_ei', dflogic1, opco_list=co_nbr_list)
 
